@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exitus - Financial Decision Simulation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg-primary: #0a0f1a;
+      --surface: #141b2d;
+      --text-primary: #e8eaed;
+      --accent-gold: #d4a574;
+      --accent-emerald: #34d399;
+    }
+    
+    * {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .glass-card {
+      background: linear-gradient(135deg, rgba(20, 27, 45, 0.9) 0%, rgba(10, 15, 26, 0.95) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(212, 165, 116, 0.15);
+    }
+    
+    .glow-gold {
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.15);
+    }
+    
+    .glow-emerald {
+      box-shadow: 0 0 30px rgba(52, 211, 153, 0.2);
+    }
+    
+    .stat-bar {
+      background: linear-gradient(90deg, rgba(212, 165, 116, 0.3) 0%, transparent 100%);
+    }
+    
+    .decision-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .decision-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(212, 165, 116, 0.5);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .pulse-indicator {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .progress-fill {
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(20, 27, 45, 0.5);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(212, 165, 116, 0.3);
+      border-radius: 3px;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-[#0a0f1a] text-[#e8eaed] overflow-auto">
+  <div id="app" class="h-full w-full"></div>
+  <script>
+    // Default configuration
+    const defaultConfig = {
+      platform_title: "EXITUS",
+      team_name: "Newton Apple",
+      tagline: "Experience consequences before they become lessons",
+      primary_color: "#0a0f1a",
+      surface_color: "#141b2d",
+      text_color: "#e8eaed",
+      accent_color: "#d4a574",
+      secondary_accent: "#34d399",
+      font_family: "Space Grotesk",
+      font_size: 16
+    };
+
+    let config = { ...defaultConfig };
+
+    // ========== SCENARIO DATA (JSON-based) ==========
+    const scenariosData = {
+      scenarios: [
+        {
+          id: "retail_collapse",
+          name: "The Retail Giant's Fall",
+          description: "Lead a major retail corporation through digital disruption, debt management, and strategic pivots. Based on abstracted patterns from retail industry transformations.",
+          industry: "Retail",
+          difficulty: "Hard",
+          duration: "8 decisions",
+          icon: "🏬",
+          initialState: {
+            cash: 2500,
+            debt: 4200,
+            reputation: 72,
+            stability: 65,
+            marketShare: 28,
+            employeeCount: 125000
+          },
+          macroConditions: {
+            interestRate: 4.5,
+            consumerDemand: -12,
+            ecommerceGrowth: 24,
+            laborCosts: 8,
+            regulatoryPressure: 15
+          }
+        },
+        {
+          id: "bank_crisis",
+          name: "Banking on the Edge",
+          description: "Navigate a regional bank through a liquidity crisis, regulatory scrutiny, and public trust erosion. Inspired by banking sector stress patterns.",
+          industry: "Banking",
+          difficulty: "Expert",
+          duration: "10 decisions",
+          icon: "🏦",
+          initialState: {
+            cash: 850,
+            debt: 12000,
+            reputation: 81,
+            stability: 45,
+            deposits: 28500,
+            loanPortfolio: 31000
+          },
+          macroConditions: {
+            interestRate: 5.25,
+            depositFlight: 18,
+            regulatoryPressure: 85,
+            marketVolatility: 42,
+            creditRisk: 28
+          }
+        },
+        {
+          id: "startup_burn",
+          name: "Unicorn in Flames",
+          description: "Manage a high-growth tech startup facing cash burn, investor pressure, and market pivots. Based on startup ecosystem patterns.",
+          industry: "Technology",
+          difficulty: "Medium",
+          duration: "6 decisions",
+          icon: "🦄",
+          initialState: {
+            cash: 180,
+            debt: 0,
+            reputation: 88,
+            stability: 55,
+            runway: 14,
+            valuation: 2400
+          },
+          macroConditions: {
+            interestRate: 5.5,
+            vcFunding: -35,
+            techMultiples: -28,
+            talentCosts: 15,
+            competitorPressure: 40
+          }
+        }
+      ]
+    };
+
+    // Decision trees for scenarios
+    const decisionTrees = {
+      retail_collapse: [
+        {
+          id: "rc_1",
+          quarter: "Q1 2019",
+          title: "Digital Crossroads",
+          context: "E-commerce competitors have captured 15% of your market in 18 months. Board demands action as same-store sales decline 8% year-over-year.",
+          decisions: [
+            {
+              id: "aggressive_digital",
+              title: "Aggressive Digital Transformation",
+              description: "Invest $800M in e-commerce platform, logistics, and technology talent. Close 200 underperforming stores.",
+              shortTermImpact: "High cash burn, workforce reduction, investor uncertainty",
+              longTermImpact: "Potential digital competitiveness, modernized infrastructure",
+              effects: { cash: -800, debt: 400, reputation: -8, stability: -15, marketShare: -3 },
+              risks: ["Execution risk", "Talent acquisition challenges", "Legacy system integration"],
+              aiExplanation: "This aggressive pivot mirrors strategies that succeeded for some retailers but failed for others. Success depends heavily on execution speed and existing technical debt. The store closures will generate short-term savings but signal retreat to competitors."
+            },
+            {
+              id: "hybrid_approach",
+              title: "Hybrid Omnichannel Strategy",
+              description: "Invest $400M in buy-online-pickup-in-store, upgrade 500 key locations, modest digital improvements.",
+              shortTermImpact: "Moderate investment, preserves physical presence",
+              longTermImpact: "Differentiated experience, but slower digital growth",
+              effects: { cash: -400, debt: 200, reputation: 2, stability: -5, marketShare: -1 },
+              risks: ["Half-measures may satisfy neither channel", "Competitor acceleration"],
+              aiExplanation: "The omnichannel approach leverages your physical footprint as an asset rather than liability. However, this balanced strategy requires precise execution—retailers who tried this often found themselves outpaced by pure-play competitors while still bearing real estate costs."
+            },
+            {
+              id: "double_down_physical",
+              title: "Double Down on Experience",
+              description: "Invest $300M in premium store experiences, exclusive brands, and customer service. Minimal digital spend.",
+              shortTermImpact: "Preserves current operations, lower immediate risk",
+              longTermImpact: "Risk of irrelevance if digital shift accelerates",
+              effects: { cash: -300, debt: 100, reputation: 5, stability: 5, marketShare: -2 },
+              risks: ["Structural market shift ignored", "Demographic changes"],
+              aiExplanation: "This strategy bets that physical retail has enduring value—a bet that proved correct for luxury segments but catastrophic for middle-market retailers. Your customer demographics and brand positioning are critical factors the data suggests are unfavorable for this path."
+            }
+          ]
+        },
+        {
+          id: "rc_2",
+          quarter: "Q2 2019",
+          title: "Debt Reckoning",
+          context: "A $1.2B bond matures in 8 months. Credit rating agencies signal potential downgrade. Refinancing costs have increased 180 basis points.",
+          decisions: [
+            {
+              id: "refinance_full",
+              title: "Full Refinancing at Premium",
+              description: "Refinance entire debt at current rates (6.8%), extending maturity 5 years. Pay $85M in fees.",
+              shortTermImpact: "Immediate liquidity relief, higher interest burden",
+              longTermImpact: "Flexibility preserved but profitability constrained",
+              effects: { cash: -85, debt: 0, reputation: -3, stability: 15 },
+              risks: ["Increased interest expense", "Covenant restrictions"],
+              aiExplanation: "Refinancing buys time but locks in unfavorable rates. The additional interest expense of approximately $65M annually will pressure margins already under siege. However, avoiding default preserves optionality—a luxury that evaporates in bankruptcy."
+            },
+            {
+              id: "asset_sale",
+              title: "Strategic Asset Sales",
+              description: "Sell real estate portfolio ($900M value) and lease back key locations. Use proceeds to retire debt.",
+              shortTermImpact: "Immediate debt reduction, loss of asset base",
+              longTermImpact: "Lower debt but higher operating costs, reduced flexibility",
+              effects: { cash: 600, debt: -900, reputation: -5, stability: 5 },
+              risks: ["Lease cost escalation", "Loss of collateral", "Signal of distress"],
+              aiExplanation: "Sale-leaseback transactions can provide relief but fundamentally transform your cost structure. Historical data shows average lease escalations of 2.5% annually, which compounds to significant burden over time. This also removes real estate as collateral for future financing."
+            },
+            {
+              id: "negotiate_extend",
+              title: "Negotiate Extension with Bondholders",
+              description: "Approach bondholders for 2-year extension at 8.5% rate. Offer warrants as sweetener.",
+              shortTermImpact: "Uncertain outcome, management distraction",
+              longTermImpact: "If successful, moderate cost; if failed, crisis",
+              effects: { cash: -25, debt: 0, reputation: -8, stability: -10 },
+              risks: ["Negotiation failure", "Public disclosure", "Bondholder activism"],
+              aiExplanation: "Direct negotiation signals distress to the market—a signal that can become self-fulfilling. Success probability based on similar situations is approximately 45%. However, if successful, this preserves maximum flexibility while buying time for operational improvements."
+            }
+          ]
+        },
+        {
+          id: "rc_3",
+          quarter: "Q3 2019",
+          title: "Workforce Crossroads",
+          context: "Labor costs represent 22% of revenue. Union contracts expire in 60 days. Competitors have automated 40% of distribution.",
+          decisions: [
+            {
+              id: "automation_push",
+              title: "Aggressive Automation",
+              description: "Invest $500M in warehouse automation, reduce workforce by 15,000. Offer severance packages.",
+              shortTermImpact: "High upfront cost, labor relations crisis, operational risk",
+              longTermImpact: "Structural cost reduction, competitive positioning",
+              effects: { cash: -500, debt: 300, reputation: -12, stability: -8 },
+              risks: ["Implementation delays", "Union action", "Public backlash"],
+              aiExplanation: "Automation ROI typically requires 3-5 years to materialize. During transition, dual-running costs and implementation challenges often exceed projections by 30-50%. The workforce reduction will generate immediate headlines and potential boycott movements."
+            },
+            {
+              id: "negotiate_concessions",
+              title: "Negotiate Union Concessions",
+              description: "Seek 8% wage reduction, healthcare cost-sharing, and flexible scheduling in exchange for job guarantees.",
+              shortTermImpact: "Protracted negotiations, strike risk",
+              longTermImpact: "Moderate savings if successful, preserved relationships",
+              effects: { cash: 0, debt: 0, reputation: -5, stability: -12 },
+              risks: ["Strike action", "Partial agreement only", "Morale impact"],
+              aiExplanation: "Union negotiations in distressed situations succeed approximately 60% of the time but often result in partial concessions. The 'job guarantee' trade-off may prove hollow if market conditions force later reductions anyway—a dynamic unions understand well."
+            },
+            {
+              id: "maintain_status_quo",
+              title: "Maintain Current Terms",
+              description: "Renew contracts at current terms plus 2% annual increases. Focus cost reduction elsewhere.",
+              shortTermImpact: "Labor peace, continued cost pressure",
+              longTermImpact: "Structural disadvantage versus automated competitors",
+              effects: { cash: 0, debt: 0, reputation: 3, stability: 8 },
+              risks: ["Margin compression", "Competitive disadvantage"],
+              aiExplanation: "Avoiding confrontation preserves operational stability but cements a structural cost disadvantage. With competitors achieving 15-20% lower fulfillment costs through automation, this path requires offsetting advantages in customer experience or brand value."
+            }
+          ]
+        }
+      ],
+      bank_crisis: [
+        {
+          id: "bc_1",
+          quarter: "March 2023",
+          title: "Liquidity Pressure",
+          context: "Social media reports of instability have triggered $2.8B in deposit outflows over 72 hours. Unrealized losses on securities portfolio total $1.9B.",
+          decisions: [
+            {
+              id: "emergency_liquidity",
+              title: "Emergency Liquidity Access",
+              description: "Access Federal Reserve discount window for $3B. Signal stability through CEO communication blitz.",
+              shortTermImpact: "Immediate liquidity, but public disclosure required",
+              longTermImpact: "Stigma effect may accelerate further withdrawals",
+              effects: { cash: 3000, debt: 3000, reputation: -15, stability: 10, deposits: -800 },
+              risks: ["Stigma acceleration", "Regulatory scrutiny intensification"],
+              aiExplanation: "The discount window provides immediate relief but carries historical stigma. In previous banking stresses, approximately 40% of institutions accessing emergency facilities experienced accelerated deposit flight afterward. Your communications strategy will be critical."
+            },
+            {
+              id: "asset_liquidation",
+              title: "Selective Asset Liquidation",
+              description: "Sell $2B in held-to-maturity securities, realize losses. Maintain independence from Fed facilities.",
+              shortTermImpact: "Crystallize $400M loss, immediate capital impact",
+              longTermImpact: "Clean balance sheet, but weakened capital position",
+              effects: { cash: 1600, debt: 0, reputation: -8, stability: -5, deposits: -400 },
+              risks: ["Capital ratio breach", "Further mark-to-market pressure"],
+              aiExplanation: "Realizing losses crystallizes what is currently paper damage, but demonstrates proactive management. The capital impact may trigger regulatory capital requirements, potentially forcing a dilutive equity raise. Timing and market conditions are critical factors."
+            },
+            {
+              id: "seek_acquisition",
+              title: "Seek Strategic Merger",
+              description: "Approach larger regional banks for emergency acquisition. Accept significant discount to book value.",
+              shortTermImpact: "Loss of independence, management transition",
+              longTermImpact: "Depositor protection, shareholder value destruction",
+              effects: { cash: 0, debt: -5000, reputation: -20, stability: 25 },
+              risks: ["No buyer interest", "Due diligence reveals worse problems"],
+              aiExplanation: "In banking crises, acquisition provides the cleanest resolution for depositors but typically values the target at 30-50% of book value. Your shareholders face significant losses, but this path avoids the regulatory intervention that could follow continued deterioration."
+            }
+          ]
+        }
+      ],
+      startup_burn: [
+        {
+          id: "sb_1",
+          quarter: "Q4 2022",
+          title: "Runway Reality",
+          context: "With 14 months runway and VC funding frozen, growth at all costs is no longer viable. Monthly burn rate is $12.8M with revenue of $4.2M.",
+          decisions: [
+            {
+              id: "aggressive_cuts",
+              title: "Survival Mode",
+              description: "Cut 45% of workforce, shut down 3 product lines, focus on path to profitability within 12 months.",
+              shortTermImpact: "Massive organizational disruption, talent exodus",
+              longTermImpact: "Extended runway, but reduced growth capacity",
+              effects: { cash: 0, debt: 0, reputation: -15, stability: -20, runway: 8, valuation: -600 },
+              risks: ["Key talent departure", "Product quality decline", "Customer churn"],
+              aiExplanation: "Deep cuts extend runway but fundamentally change company trajectory. Historical data shows 65% of startups making >40% reductions fail to return to growth. However, the alternative—running out of cash—has a 100% failure rate."
+            },
+            {
+              id: "bridge_round",
+              title: "Bridge Financing",
+              description: "Raise $50M bridge round from existing investors at 40% valuation discount with aggressive milestones.",
+              shortTermImpact: "Significant dilution, investor control increases",
+              longTermImpact: "Continued operations, but higher bar for next round",
+              effects: { cash: 50, debt: 0, reputation: -5, stability: 5, runway: 4, valuation: -400 },
+              risks: ["Investors decline", "Milestone failure", "Down-round signaling"],
+              aiExplanation: "Bridge rounds in down markets carry punitive terms—typically 30-50% discount plus liquidation preference enhancements. Your existing investors' willingness depends on their fund lifecycle and portfolio concentration. The milestone requirements will be aggressive."
+            },
+            {
+              id: "strategic_pivot",
+              title: "Strategic Pivot to Enterprise",
+              description: "Abandon consumer focus, pivot engineering to enterprise sales. Target profitability through fewer, larger contracts.",
+              shortTermImpact: "Complete strategy change, team restructuring",
+              longTermImpact: "Different business model, longer sales cycles",
+              effects: { cash: -20, debt: 0, reputation: -8, stability: -15, runway: -2, valuation: -200 },
+              risks: ["Pivot execution failure", "Enterprise sales learning curve"],
+              aiExplanation: "B2B pivots from consumer businesses succeed approximately 25% of the time. The sales motion, product requirements, and organizational culture differ fundamentally. However, enterprise revenue is more predictable and valued at higher multiples in current markets."
+            }
+          ]
+        }
+      ]
+    };
+
+    // ========== GAME STATE ==========
+    let gameState = {
+      currentView: 'landing',
+      selectedScenario: null,
+      currentDecisionIndex: 0,
+      companyState: {},
+      macroConditions: {},
+      decisionHistory: [],
+      gameComplete: false,
+      finalAnalysis: null
+    };
+
+    // ========== CORE FUNCTIONS ==========
+    function applyMacroModifiers(effects, macro) {
+      const modified = { ...effects };
+      
+      // Interest rate impacts debt costs
+      if (modified.debt && macro.interestRate) {
+        const rateModifier = 1 + ((macro.interestRate - 4) * 0.1);
+        modified.debt = Math.round(modified.debt * rateModifier);
+      }
+      
+      // Consumer demand impacts reputation/market share
+      if (macro.consumerDemand && modified.marketShare) {
+        const demandModifier = 1 + (macro.consumerDemand * 0.02);
+        modified.marketShare = Math.round(modified.marketShare * demandModifier);
+      }
+      
+      // Regulatory pressure impacts stability
+      if (macro.regulatoryPressure && modified.stability) {
+        const regModifier = 1 - (macro.regulatoryPressure * 0.005);
+        modified.stability = Math.round(modified.stability * regModifier);
+      }
+      
+      return modified;
+    }
+
+    function calculateOutcome(decision, currentState, macro) {
+      const modifiedEffects = applyMacroModifiers(decision.effects, macro);
+      const newState = { ...currentState };
+      
+      for (const [key, value] of Object.entries(modifiedEffects)) {
+        if (newState[key] !== undefined) {
+          newState[key] = Math.max(0, newState[key] + value);
+        }
+      }
+      
+      // Cap values
+      if (newState.reputation) newState.reputation = Math.min(100, newState.reputation);
+      if (newState.stability) newState.stability = Math.min(100, newState.stability);
+      
+      return newState;
+    }
+
+    function getStateColor(value, metric) {
+      if (metric === 'debt') {
+        if (value > 5000) return '#ef4444';
+        if (value > 2000) return '#f59e0b';
+        return '#34d399';
+      }
+      if (value >= 70) return '#34d399';
+      if (value >= 40) return '#f59e0b';
+      return '#ef4444';
+    }
+
+    function formatCurrency(value) {
+      if (value >= 1000) return `$${(value / 1000).toFixed(1)}B`;
+      return `$${value}M`;
+    }
+
+    // ========== RENDER FUNCTIONS ==========
+    function renderApp() {
+      const app = document.getElementById('app');
+      
+      switch (gameState.currentView) {
+        case 'landing':
+          app.innerHTML = renderLanding();
+          break;
+        case 'scenarios':
+          app.innerHTML = renderScenarios();
+          break;
+        case 'game':
+          app.innerHTML = renderGame();
+          break;
+        case 'outcome':
+          app.innerHTML = renderOutcome();
+          break;
+        case 'summary':
+          app.innerHTML = renderSummary();
+          break;
+      }
+      
+      attachEventListeners();
+    }
+
+    function renderLanding() {
+      return `
+        <div class="min-h-full w-full bg-gradient-to-br from-[#0a0f1a] via-[#0d1424] to-[#0a0f1a] flex flex-col">
+          <!-- Header -->
+          <header class="px-6 py-4 flex items-center justify-between border-b border-[#d4a574]/10">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#d4a574] to-[#b8956a] flex items-center justify-center">
+                <svg class="w-6 h-6 text-[#0a0f1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+              </div>
+              <span class="text-xl font-semibold tracking-wide" id="header-title">${config.platform_title || defaultConfig.platform_title}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-[#e8eaed]/60">
+              <span>Developed by</span>
+              <span class="text-[#d4a574] font-medium" id="header-team">${config.team_name || defaultConfig.team_name}</span>
+            </div>
+          </header>
+          
+          <!-- Hero Section -->
+          <main class="flex-1 flex flex-col items-center justify-center px-6 py-12">
+            <div class="max-w-4xl w-full text-center space-y-8 fade-in">
+              <!-- Logo Mark -->
+              <div class="relative mx-auto w-32 h-32 mb-8">
+                <div class="absolute inset-0 bg-gradient-to-br from-[#d4a574]/20 to-transparent rounded-full blur-2xl"></div>
+                <div class="relative w-full h-full rounded-full border-2 border-[#d4a574]/30 flex items-center justify-center glass-card">
+                  <svg class="w-16 h-16 text-[#d4a574]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                </div>
+              </div>
+              
+              <!-- Title -->
+              <div class="space-y-4">
+                <h1 class="text-6xl md:text-7xl font-bold tracking-tight">
+                  <span class="bg-gradient-to-r from-[#d4a574] via-[#e8c4a0] to-[#d4a574] bg-clip-text text-transparent" id="main-title">
+                    ${config.platform_title || defaultConfig.platform_title}
+                  </span>
+                </h1>
+                <p class="text-xl md:text-2xl text-[#e8eaed]/70 font-light max-w-2xl mx-auto" id="main-tagline">
+                  ${config.tagline || defaultConfig.tagline}
+                </p>
+              </div>
+              
+              <!-- Description -->
+              <div class="max-w-2xl mx-auto space-y-4 text-[#e8eaed]/60">
+                <p class="text-lg leading-relaxed">
+                  Step into the shoes of executives facing impossible choices. Navigate financial crises, 
+                  strategic pivots, and market disruptions through realistic simulations based on 
+                  abstracted real-world patterns.
+                </p>
+              </div>
+              
+              <!-- CTA Button -->
+              <div class="pt-8">
+                <button id="start-btn" class="group relative px-12 py-4 bg-gradient-to-r from-[#d4a574] to-[#b8956a] text-[#0a0f1a] font-semibold text-lg rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-[#d4a574]/25 hover:scale-105">
+                  <span class="relative z-10 flex items-center gap-3">
+                    Begin Simulation
+                    <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+              
+              <!-- Features Grid -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16 max-w-3xl mx-auto">
+                <div class="glass-card rounded-xl p-6 text-left">
+                  <div class="w-12 h-12 rounded-lg bg-[#d4a574]/10 flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6 text-[#d4a574]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-[#e8eaed] mb-2">Deterministic Logic</h3>
+                  <p class="text-sm text-[#e8eaed]/60">Every decision has predictable, transparent consequences based on financial fundamentals.</p>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6 text-left">
+                  <div class="w-12 h-12 rounded-lg bg-[#34d399]/10 flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6 text-[#34d399]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-[#e8eaed] mb-2">Real Patterns</h3>
+                  <p class="text-sm text-[#e8eaed]/60">Scenarios abstracted from real-world financial events, ethically anonymized.</p>
+                </div>
+                
+                <div class="glass-card rounded-xl p-6 text-left">
+                  <div class="w-12 h-12 rounded-lg bg-[#d4a574]/10 flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6 text-[#d4a574]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-[#e8eaed] mb-2">AI Explanations</h3>
+                  <p class="text-sm text-[#e8eaed]/60">Intelligent analysis of trade-offs and second-order effects for every decision.</p>
+                </div>
+              </div>
+            </div>
+          </main>
+          
+          <!-- Footer -->
+          <footer class="px-6 py-4 border-t border-[#d4a574]/10 text-center text-sm text-[#e8eaed]/40">
+            <p>Financial Games & Finopoly – Game Development Track</p>
+          </footer>
+        </div>
+      `;
+    }
+
+    function renderScenarios() {
+      const scenarios = scenariosData.scenarios;
+      
+      return `
+        <div class="min-h-full w-full bg-gradient-to-br from-[#0a0f1a] via-[#0d1424] to-[#0a0f1a] flex flex-col">
+          <!-- Header -->
+          <header class="px-6 py-4 flex items-center justify-between border-b border-[#d4a574]/10">
+            <button id="back-to-landing" class="flex items-center gap-2 text-[#e8eaed]/60 hover:text-[#d4a574] transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+              <span>Back</span>
+            </button>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#d4a574] to-[#b8956a] flex items-center justify-center">
+                <svg class="w-4 h-4 text-[#0a0f1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+              </div>
+              <span class="font-semibold" id="scenario-header-title">${config.platform_title || defaultConfig.platform_title}</span>
+            </div>
+            <div class="w-20"></div>
+          </header>
+          
+          <!-- Main Content -->
+          <main class="flex-1 px-6 py-12 overflow-auto">
+            <div class="max-w-6xl mx-auto">
+              <div class="text-center mb-12 fade-in">
+                <h2 class="text-4xl font-bold text-[#e8eaed] mb-4">Select Your Scenario</h2>
+                <p class="text-lg text-[#e8eaed]/60 max-w-2xl mx-auto">
+                  Each scenario presents a unique financial crisis. Your decisions will determine the outcome.
+                </p>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${scenarios.map((scenario, index) => `
+                  <div class="glass-card rounded-2xl p-6 decision-card cursor-pointer fade-in" style="animation-delay: ${index * 100}ms" data-scenario="${scenario.id}">
+                    <div class="flex items-start justify-between mb-4">
+                      <span class="text-4xl">${scenario.icon}</span>
+                      <span class="px-3 py-1 rounded-full text-xs font-medium ${
+                        scenario.difficulty === 'Expert' ? 'bg-red-500/20 text-red-400' :
+                        scenario.difficulty === 'Hard' ? 'bg-amber-500/20 text-amber-400' :
+                        'bg-green-500/20 text-green-400'
+                      }">${scenario.difficulty}</span>
+                    </div>
+                    
+                    <h3 class="text-xl font-semibold text-[#e8eaed] mb-2">${scenario.name}</h3>
+                    <p class="text-sm text-[#e8eaed]/60 mb-4 line-clamp-3">${scenario.description}</p>
+                    
+                    <div class="flex items-center gap-4 text-xs text-[#e8eaed]/50 mb-4">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        ${scenario.industry}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        ${scenario.duration}
+                      </span>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-[#d4a574]/10">
+                      <div class="text-xs text-[#e8eaed]/40 mb-2">Initial Conditions</div>
+                      <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="flex justify-between">
+                          <span class="text-[#e8eaed]/50">Cash:</span>
+                          <span class="text-[#34d399] mono">${formatCurrency(scenario.initialState.cash)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-[#e8eaed]/50">Debt:</span>
+                          <span class="text-[#ef4444] mono">${formatCurrency(scenario.initialState.debt)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </main>
+        </div>
+      `;
+    }
+
+    function renderGame() {
+      const scenario = scenariosData.scenarios.find(s => s.id === gameState.selectedScenario);
+      const decisions = decisionTrees[gameState.selectedScenario] || [];
+      const currentDecision = decisions[gameState.currentDecisionIndex];
+      
+      if (!currentDecision) {
+        gameState.currentView = 'summary';
+        gameState.gameComplete = true;
+        renderApp();
+        return '';
+      }
+      
+      const state = gameState.companyState;
+      const macro = gameState.macroConditions;
+      
+      return `
+        <div class="min-h-full w-full bg-gradient-to-br from-[#0a0f1a] via-[#0d1424] to-[#0a0f1a] flex flex-col">
+          <!-- Header -->
+          <header class="px-6 py-4 border-b border-[#d4a574]/10">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="text-2xl">${scenario.icon}</span>
+                <div>
+                  <h1 class="font-semibold text-[#e8eaed]">${scenario.name}</h1>
+                  <p class="text-sm text-[#e8eaed]/50">${currentDecision.quarter}</p>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-[#e8eaed]/50">Progress</span>
+                  <div class="flex gap-1">
+                    ${decisions.map((_, i) => `
+                      <div class="w-3 h-3 rounded-full ${i < gameState.currentDecisionIndex ? 'bg-[#34d399]' : i === gameState.currentDecisionIndex ? 'bg-[#d4a574] pulse-indicator' : 'bg-[#141b2d]'}"></div>
+                    `).join('')}
+                  </div>
+                </div>
+                <button id="exit-game" class="text-[#e8eaed]/50 hover:text-[#d4a574] transition-colors">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header>
+          
+          <!-- Main Content -->
+          <main class="flex-1 overflow-auto">
+            <div class="max-w-7xl mx-auto p-6">
+              <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- State Panel -->
+                <div class="lg:col-span-1 space-y-4">
+                  <!-- Company State -->
+                  <div class="glass-card rounded-xl p-4 glow-gold">
+                    <h3 class="text-sm font-semibold text-[#d4a574] mb-4 flex items-center gap-2">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                      </svg>
+                      Company State
+                    </h3>
+                    
+                    <div class="space-y-3">
+                      ${renderStatBar('Cash', state.cash, 5000, 'cash')}
+                      ${renderStatBar('Debt', state.debt, 10000, 'debt')}
+                      ${renderStatBar('Reputation', state.reputation, 100, 'reputation')}
+                      ${renderStatBar('Stability', state.stability, 100, 'stability')}
+                      ${state.marketShare !== undefined ? renderStatBar('Market Share', state.marketShare, 50, 'marketShare') : ''}
+                    </div>
+                  </div>
+                  
+                  <!-- Macro Conditions -->
+                  <div class="glass-card rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-[#e8eaed]/70 mb-4 flex items-center gap-2">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      Market Conditions
+                    </h3>
+                    
+                    <div class="space-y-2 text-sm">
+                      <div class="flex justify-between items-center">
+                        <span class="text-[#e8eaed]/50">Interest Rate</span>
+                        <span class="mono text-[#e8eaed]">${macro.interestRate}%</span>
+                      </div>
+                      ${macro.consumerDemand !== undefined ? `
+                        <div class="flex justify-between items-center">
+                          <span class="text-[#e8eaed]/50">Consumer Demand</span>
+                          <span class="mono ${macro.consumerDemand < 0 ? 'text-red-400' : 'text-green-400'}">${macro.consumerDemand > 0 ? '+' : ''}${macro.consumerDemand}%</span>
+                        </div>
+                      ` : ''}
+                      ${macro.regulatoryPressure !== undefined ? `
+                        <div class="flex justify-between items-center">
+                          <span class="text-[#e8eaed]/50">Regulatory Pressure</span>
+                          <span class="mono ${macro.regulatoryPressure > 50 ? 'text-red-400' : 'text-amber-400'}">${macro.regulatoryPressure}%</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Decision Area -->
+                <div class="lg:col-span-3 space-y-6">
+                  <!-- Context -->
+                  <div class="glass-card rounded-xl p-6 fade-in">
+                    <div class="flex items-start gap-4">
+                      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d4a574]/20 to-transparent flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-[#d4a574]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 class="text-2xl font-bold text-[#e8eaed] mb-2">${currentDecision.title}</h2>
+                        <p class="text-[#e8eaed]/70 leading-relaxed">${currentDecision.context}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Decision Options -->
+                  <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-[#e8eaed]/80">Your Options</h3>
+                    
+                    ${currentDecision.decisions.map((decision, index) => `
+                      <div class="glass-card rounded-xl p-6 decision-card cursor-pointer fade-in" style="animation-delay: ${index * 100}ms" data-decision="${decision.id}">
+                        <div class="flex items-start justify-between gap-4 mb-4">
+                          <div>
+                            <h4 class="text-xl font-semibold text-[#e8eaed] mb-1">${decision.title}</h4>
+                            <p class="text-[#e8eaed]/60">${decision.description}</p>
+                          </div>
+                          <div class="w-10 h-10 rounded-lg bg-[#d4a574]/10 flex items-center justify-center flex-shrink-0">
+                            <span class="text-[#d4a574] font-bold">${index + 1}</span>
+                          </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div class="bg-[#0a0f1a]/50 rounded-lg p-3">
+                            <div class="text-xs text-[#e8eaed]/40 mb-1">Short-term Impact</div>
+                            <p class="text-sm text-amber-400">${decision.shortTermImpact}</p>
+                          </div>
+                          <div class="bg-[#0a0f1a]/50 rounded-lg p-3">
+                            <div class="text-xs text-[#e8eaed]/40 mb-1">Long-term Impact</div>
+                            <p class="text-sm text-[#34d399]">${decision.longTermImpact}</p>
+                          </div>
+                        </div>
+                        
+                        <!-- Expected Effects Preview -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                          ${Object.entries(decision.effects).map(([key, value]) => `
+                            <span class="px-2 py-1 rounded text-xs mono ${value < 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}">
+                              ${key}: ${value > 0 ? '+' : ''}${value}
+                            </span>
+                          `).join('')}
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2">
+                          ${decision.risks.map(risk => `
+                            <span class="px-2 py-1 rounded bg-amber-500/10 text-amber-400 text-xs">⚠ ${risk}</span>
+                          `).join('')}
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      `;
+    }
+
+    function renderStatBar(label, value, max, type) {
+      const percentage = Math.min((value / max) * 100, 100);
+      const color = getStateColor(value, type);
+      const displayValue = type === 'cash' || type === 'debt' ? formatCurrency(value) : `${value}%`;
+      
+      return `
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs">
+            <span class="text-[#e8eaed]/60">${label}</span>
+            <span class="mono" style="color: ${color}">${displayValue}</span>
+          </div>
+          <div class="h-2 bg-[#0a0f1a]/50 rounded-full overflow-hidden">
+            <div class="h-full rounded-full progress-fill" style="width: ${percentage}%; background-color: ${color}"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderOutcome() {
+      const lastDecision = gameState.decisionHistory[gameState.decisionHistory.length - 1];
+      if (!lastDecision) {
+        gameState.currentView = 'game';
+        renderApp();
+        return '';
+      }
+      
+      const scenario = scenariosData.scenarios.find(s => s.id === gameState.selectedScenario);
+      const decisions = decisionTrees[gameState.selectedScenario] || [];
+      const decisionNode = decisions[gameState.currentDecisionIndex - 1];
+      const selectedOption = decisionNode?.decisions.find(d => d.id === lastDecision.decisionId);
+      
+      return `
+        <div class="min-h-full w-full bg-gradient-to-br from-[#0a0f1a] via-[#0d1424] to-[#0a0f1a] flex flex-col">
+          <!-- Header -->
+          <header class="px-6 py-4 border-b border-[#d4a574]/10">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="text-2xl">${scenario.icon}</span>
+                <div>
+                  <h1 class="font-semibold text-[#e8eaed]">${scenario.name}</h1>
+                  <p class="text-sm text-[#e8eaed]/50">Decision Outcome</p>
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <!-- Main Content -->
+          <main class="flex-1 overflow-auto p-6">
+            <div class="max-w-4xl mx-auto space-y-6">
+              <!-- Decision Made -->
+              <div class="glass-card rounded-xl p-6 glow-gold fade-in">
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d4a574] to-[#b8956a] flex items-center justify-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-[#0a0f1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-2xl font-bold text-[#e8eaed] mb-2">Decision: ${selectedOption?.title}</h2>
+                    <p class="text-[#e8eaed]/70">${selectedOption?.description}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- State Changes -->
+              <div class="glass-card rounded-xl p-6 fade-in" style="animation-delay: 100ms">
+                <h3 class="text-lg font-semibold text-[#e8eaed] mb-4 flex items-center gap-2">
+                  <svg class="w-5 h-5 text-[#d4a574]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                  </svg>
+                  Impact Analysis
+                </h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  ${Object.entries(lastDecision.effects).map(([key, value]) => `
+                    <div class="bg-[#0a0f1a]/50 rounded-lg p-4 text-center">
+                      <div class="text-xs text-[#e8eaed]/50 mb-1 capitalize">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                      <div class="text-2xl font-bold mono ${value < 0 ? 'text-red-400' : 'text-green-400'}">
+                        ${value > 0 ? '+' : ''}${key === 'cash' || key === 'debt' ? formatCurrency(Math.abs(value)) : value}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              
+              <!-- AI Analysis -->
+              <div class="glass-card rounded-xl p-6 fade-in glow-emerald" style="animation-delay: 200ms">
+                <h3 class="text-lg font-semibold text-[#34d399] mb-4 flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                  </svg>
+                  Strategic Analysis
+                </h3>
+                
+                <div class="bg-[#0a0f1a]/30 rounded-lg p-4 border-l-4 border-[#34d399]">
+                  <p class="text-[#e8eaed]/80 leading-relaxed">${selectedOption?.aiExplanation}</p>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-[#34d399]/20">
+                  <h4 class="text-sm font-semibold text-[#e8eaed]/70 mb-2">Key Risks to Monitor</h4>
+                  <div class="flex flex-wrap gap-2">
+                    ${selectedOption?.risks.map(risk => `
+                      <span class="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-sm">⚠ ${risk}</span>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Updated State -->
+              <div class="glass-card rounded-xl p-6 fade-in" style="animation-delay: 300ms">
+                <h3 class="text-lg font-semibold text-[#e8eaed] mb-4">Current Company State</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  ${Object.entries(gameState.companyState).slice(0, 4).map(([key, value]) => `
+                    <div class="text-center">
+                      <div class="text-xs text-[#e8eaed]/50 mb-1 capitalize">${key.replace(/([A-Z])/g, ' $1').trim()}</div>
+                      <div class="text-xl font-bold mono" style="color: ${getStateColor(value, key)}">
+                        ${key === 'cash' || key === 'debt' ? formatCurrency(value) : typeof value === 'number' && value <= 100 ? `${value}%` : value}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              
+              <!-- Continue Button -->
+              <div class="flex justify-center pt-4">
+                <button id="continue-game" class="px-8 py-3 bg-gradient-to-r from-[#d4a574] to-[#b8956a] text-[#0a0f1a] font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-[#d4a574]/25 hover:scale-105 flex items-center gap-2">
+                  ${gameState.currentDecisionIndex >= (decisionTrees[gameState.selectedScenario]?.length || 0) ? 'View Final Analysis' : 'Continue to Next Decision'}
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      `;
+    }
+
+    function renderSummary() {
+      const scenario = scenariosData.scenarios.find(s => s.id === gameState.selectedScenario);
+      const finalState = gameState.companyState;
+      const initialState = scenario.initialState;
+      
+      // Calculate overall score
+      const scores = {
+        financial: Math.max(0, 100 - (finalState.debt / 100) + (finalState.cash / 50)),
+        reputation: finalState.reputation,
+        stability: finalState.stability
+      };
+      const overallScore = Math.round((scores.financial + scores.reputation + scores.stability) / 3);
+      
+      // Determine outcome
+      let outcomeTitle, outcomeDescription, outcomeColor;
+      if (finalState.stability <= 20 || finalState.cash <= 0) {
+        outcomeTitle = "Company Collapse";
+        outcomeDescription = "Despite your efforts, the accumulated pressures proved insurmountable. The company faced restructuring or dissolution.";
+        outcomeColor = "#ef4444";
+      } else if (overallScore >= 70) {
+        outcomeTitle = "Successful Navigation";
+        outcomeDescription = "Through strategic decision-making, you guided the company through turbulent times and positioned it for recovery.";
+        outcomeColor = "#34d399";
+      } else if (overallScore >= 40) {
+        outcomeTitle = "Survival Mode";
+        outcomeDescription = "The company survived but emerged weakened. Significant challenges remain, and recovery will be slow.";
+        outcomeColor = "#f59e0b";
+      } else {
+        outcomeTitle = "Critical Condition";
+        outcomeDescription = "The company remains on life support. Without dramatic intervention, failure appears likely.";
+        outcomeColor = "#ef4444";
+      }
+      
+      return `
+        <div class="min-h-full w-full bg-gradient-to-br from-[#0a0f1a] via-[#0d1424] to-[#0a0f1a] flex flex-col">
+          <!-- Header -->
+          <header class="px-6 py-4 border-b border-[#d4a574]/10">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="text-2xl">${scenario.icon}</span>
+                <div>
+                  <h1 class="font-semibold text-[#e8eaed]">${scenario.name}</h1>
+                  <p class="text-sm text-[#e8eaed]/50">Final Analysis</p>
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <!-- Main Content -->
+          <main class="flex-1 overflow-auto p-6">
+            <div class="max-w-4xl mx-auto space-y-6">
+              <!-- Outcome Banner -->
+              <div class="glass-card rounded-xl p-8 text-center fade-in" style="border-color: ${outcomeColor}40; box-shadow: 0 0 40px ${outcomeColor}20">
+                <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center" style="background: ${outcomeColor}20; border: 2px solid ${outcomeColor}">
+                  <span class="text-4xl font-bold mono" style="color: ${outcomeColor}">${overallScore}</span>
+                </div>
+                <h2 class="text-3xl font-bold mb-2" style="color: ${outcomeColor}">${outcomeTitle}</h2>
+                <p class="text-[#e8eaed]/70 max-w-xl mx-auto">${outcomeDescription}</p>
+              </div>
+              
+              <!-- State Comparison -->
+              <div class="glass-card rounded-xl p-6 fade-in" style="animation-delay: 100ms">
+                <h3 class="text-lg font-semibold text-[#e8eaed] mb-4">State Comparison</h3>
+                <div class="space-y-4">
+                  ${['cash', 'debt', 'reputation', 'stability'].map(key => {
+                    if (initialState[key] === undefined) return '';
+                    const initial = initialState[key];
+                    const final = finalState[key];
+                    const change = final - initial;
+                    const changePercent = initial !== 0 ? ((change / initial) * 100).toFixed(1) : 0;
+                    
+                    return `
+                      <div class="flex items-center gap-4">
+                        <div class="w-24 text-sm text-[#e8eaed]/60 capitalize">${key}</div>
+                        <div class="flex-1">
+                          <div class="flex justify-between text-sm mb-1">
+                            <span class="text-[#e8eaed]/50">Initial: ${key === 'cash' || key === 'debt' ? formatCurrency(initial) : `${initial}%`}</span>
+                            <span class="text-[#e8eaed]">Final: ${key === 'cash' || key === 'debt' ? formatCurrency(final) : `${final}%`}</span>
+                          </div>
+                          <div class="h-3 bg-[#0a0f1a]/50 rounded-full overflow-hidden relative">
+                            <div class="absolute inset-0 flex">
+                              <div class="h-full bg-[#e8eaed]/20" style="width: ${(Math.min(initial, final) / (key === 'debt' ? 10000 : key === 'cash' ? 5000 : 100)) * 100}%"></div>
+                              <div class="h-full ${change >= 0 ? 'bg-green-500' : 'bg-red-500'}" style="width: ${(Math.abs(change) / (key === 'debt' ? 10000 : key === 'cash' ? 5000 : 100)) * 100}%"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="w-20 text-right">
+                          <span class="mono text-sm ${change >= 0 ? 'text-green-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${changePercent}%</span>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+              
+              <!-- Decision Timeline -->
+              <div class="glass-card rounded-xl p-6 fade-in" style="animation-delay: 200ms">
+                <h3 class="text-lg font-semibold text-[#e8eaed] mb-4">Your Decision Path</h3>
+                <div class="space-y-4">
+                  ${gameState.decisionHistory.map((decision, index) => {
+                    const decisionNode = decisionTrees[gameState.selectedScenario]?.[index];
+                    const selectedOption = decisionNode?.decisions.find(d => d.id === decision.decisionId);
+                    
+                    return `
+                      <div class="flex gap-4">
+                        <div class="flex flex-col items-center">
+                          <div class="w-8 h-8 rounded-full bg-[#d4a574]/20 flex items-center justify-center text-[#d4a574] font-bold text-sm">${index + 1}</div>
+                          ${index < gameState.decisionHistory.length - 1 ? '<div class="w-0.5 flex-1 bg-[#d4a574]/20 my-2"></div>' : ''}
+                        </div>
+                        <div class="flex-1 pb-4">
+                          <div class="text-sm text-[#e8eaed]/50 mb-1">${decisionNode?.quarter || ''}</div>
+                          <div class="font-semibold text-[#e8eaed]">${selectedOption?.title || decision.decisionId}</div>
+                          <div class="flex flex-wrap gap-1 mt-2">
+                            ${Object.entries(decision.effects).slice(0, 4).map(([key, value]) => `
+                              <span class="px-2 py-0.5 rounded text-xs mono ${value < 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}">
+                                ${key}: ${value > 0 ? '+' : ''}${value}
+                              </span>
+                            `).join('')}
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+              
+              <!-- Key Learnings -->
+              <div class="glass-card rounded-xl p-6 glow-emerald fade-in" style="animation-delay: 300ms">
+                <h3 class="text-lg font-semibold text-[#34d399] mb-4 flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                  </svg>
+                  Key Learnings
+                </h3>
+                
+                <div class="space-y-4">
+                  <div class="bg-[#0a0f1a]/30 rounded-lg p-4 border-l-4 border-[#34d399]">
+                    <h4 class="font-semibold text-[#e8eaed] mb-2">Trade-off Awareness</h4>
+                    <p class="text-[#e8eaed]/70 text-sm">Every financial decision involves trade-offs between short-term survival and long-term positioning. Quick fixes often create future obligations.</p>
+                  </div>
+                  
+                  <div class="bg-[#0a0f1a]/30 rounded-lg p-4 border-l-4 border-[#d4a574]">
+                    <h4 class="font-semibold text-[#e8eaed] mb-2">Macro Context Matters</h4>
+                    <p class="text-[#e8eaed]/70 text-sm">The same decision can succeed or fail depending on market conditions. Understanding the broader environment is crucial for strategic planning.</p>
+                  </div>
+                  
+                  <div class="bg-[#0a0f1a]/30 rounded-lg p-4 border-l-4 border-amber-500">
+                    <h4 class="font-semibold text-[#e8eaed] mb-2">Second-Order Effects</h4>
+                    <p class="text-[#e8eaed]/70 text-sm">Actions create ripples. Cost-cutting affects morale, which affects productivity, which affects revenue. Financial decisions are never isolated.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Action Buttons -->
+              <div class="flex justify-center gap-4 pt-4">
+                <button id="retry-scenario" class="px-6 py-3 glass-card text-[#e8eaed] font-semibold rounded-xl transition-all duration-300 hover:border-[#d4a574]/50 flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                  </svg>
+                  Retry Scenario
+                </button>
+                <button id="new-scenario" class="px-6 py-3 bg-gradient-to-r from-[#d4a574] to-[#b8956a] text-[#0a0f1a] font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-[#d4a574]/25 hover:scale-105 flex items-center gap-2">
+                  Try Another Scenario
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      `;
+    }
+
+    // ========== EVENT HANDLERS ==========
+    function attachEventListeners() {
+      // Landing page
+      document.getElementById('start-btn')?.addEventListener('click', () => {
+        gameState.currentView = 'scenarios';
+        renderApp();
+      });
+      
+      // Scenarios page
+      document.getElementById('back-to-landing')?.addEventListener('click', () => {
+        gameState.currentView = 'landing';
+        renderApp();
+      });
+      
+      document.querySelectorAll('[data-scenario]').forEach(card => {
+        card.addEventListener('click', () => {
+          const scenarioId = card.dataset.scenario;
+          startScenario(scenarioId);
+        });
+      });
+      
+      // Game page
+      document.getElementById('exit-game')?.addEventListener('click', () => {
+        if (gameState.decisionHistory.length > 0) {
+          // Show inline confirmation
+          const exitBtn = document.getElementById('exit-game');
+          if (exitBtn.dataset.confirming !== 'true') {
+            exitBtn.dataset.confirming = 'true';
+            exitBtn.innerHTML = '<span class="text-red-400 text-sm">Click again to confirm exit</span>';
+            setTimeout(() => {
+              if (exitBtn) {
+                exitBtn.dataset.confirming = 'false';
+                exitBtn.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+              }
+            }, 3000);
+          } else {
+            resetGame();
+            gameState.currentView = 'scenarios';
+            renderApp();
+          }
+        } else {
+          gameState.currentView = 'scenarios';
+          renderApp();
+        }
+      });
+      
+      document.querySelectorAll('[data-decision]').forEach(card => {
+        card.addEventListener('click', () => {
+          const decisionId = card.dataset.decision;
+          makeDecision(decisionId);
+        });
+      });
+      
+      // Outcome page
+      document.getElementById('continue-game')?.addEventListener('click', () => {
+        const decisions = decisionTrees[gameState.selectedScenario] || [];
+        if (gameState.currentDecisionIndex >= decisions.length) {
+          gameState.currentView = 'summary';
+          gameState.gameComplete = true;
+        } else {
+          gameState.currentView = 'game';
+        }
+        renderApp();
+      });
+      
+      // Summary page
+      document.getElementById('retry-scenario')?.addEventListener('click', () => {
+        const scenarioId = gameState.selectedScenario;
+        resetGame();
+        startScenario(scenarioId);
+      });
+      
+      document.getElementById('new-scenario')?.addEventListener('click', () => {
+        resetGame();
+        gameState.currentView = 'scenarios';
+        renderApp();
+      });
+    }
+
+    function startScenario(scenarioId) {
+      const scenario = scenariosData.scenarios.find(s => s.id === scenarioId);
+      if (!scenario) return;
+      
+      gameState.selectedScenario = scenarioId;
+      gameState.currentDecisionIndex = 0;
+      gameState.companyState = { ...scenario.initialState };
+      gameState.macroConditions = { ...scenario.macroConditions };
+      gameState.decisionHistory = [];
+      gameState.gameComplete = false;
+      gameState.currentView = 'game';
+      
+      renderApp();
+    }
+
+    function makeDecision(decisionId) {
+      const decisions = decisionTrees[gameState.selectedScenario];
+      const currentDecision = decisions?.[gameState.currentDecisionIndex];
+      const selectedOption = currentDecision?.decisions.find(d => d.id === decisionId);
+      
+      if (!selectedOption) return;
+      
+      // Calculate new state with macro modifiers
+      const modifiedEffects = applyMacroModifiers(selectedOption.effects, gameState.macroConditions);
+      const newState = calculateOutcome(selectedOption, gameState.companyState, gameState.macroConditions);
+      
+      // Record decision
+      gameState.decisionHistory.push({
+        decisionId,
+        quarter: currentDecision.quarter,
+        effects: modifiedEffects,
+        previousState: { ...gameState.companyState },
+        newState: { ...newState }
+      });
+      
+      // Update state
+      gameState.companyState = newState;
+      gameState.currentDecisionIndex++;
+      
+      // Show outcome
+      gameState.currentView = 'outcome';
+      renderApp();
+    }
+
+    function resetGame() {
+      gameState = {
+        currentView: 'landing',
+        selectedScenario: null,
+        currentDecisionIndex: 0,
+        companyState: {},
+        macroConditions: {},
+        decisionHistory: [],
+        gameComplete: false,
+        finalAnalysis: null
+      };
+    }
+
+    // ========== SDK INITIALIZATION ==========
+    function applyConfig(cfg) {
+      // Update title elements
+      const headerTitle = document.getElementById('header-title');
+      const mainTitle = document.getElementById('main-title');
+      const scenarioHeaderTitle = document.getElementById('scenario-header-title');
+      
+      if (headerTitle) headerTitle.textContent = cfg.platform_title || defaultConfig.platform_title;
+      if (mainTitle) mainTitle.textContent = cfg.platform_title || defaultConfig.platform_title;
+      if (scenarioHeaderTitle) scenarioHeaderTitle.textContent = cfg.platform_title || defaultConfig.platform_title;
+      
+      // Update team name
+      const headerTeam = document.getElementById('header-team');
+      if (headerTeam) headerTeam.textContent = cfg.team_name || defaultConfig.team_name;
+      
+      // Update tagline
+      const mainTagline = document.getElementById('main-tagline');
+      if (mainTagline) mainTagline.textContent = cfg.tagline || defaultConfig.tagline;
+      
+      // Apply colors
+      document.body.style.setProperty('--bg-primary', cfg.primary_color || defaultConfig.primary_color);
+      document.body.style.setProperty('--surface', cfg.surface_color || defaultConfig.surface_color);
+      document.body.style.setProperty('--text-primary', cfg.text_color || defaultConfig.text_color);
+      document.body.style.setProperty('--accent-gold', cfg.accent_color || defaultConfig.accent_color);
+      document.body.style.setProperty('--accent-emerald', cfg.secondary_accent || defaultConfig.secondary_accent);
+      
+      // Apply font
+      const fontFamily = cfg.font_family || defaultConfig.font_family;
+      document.documentElement.style.fontFamily = `${fontFamily}, sans-serif`;
+      
+      // Apply font size
+      const fontSize = cfg.font_size || defaultConfig.font_size;
+      document.documentElement.style.fontSize = `${fontSize}px`;
+    }
+
+    // Initialize SDK
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (cfg) => {
+          config = { ...defaultConfig, ...cfg };
+          applyConfig(config);
+        },
+        mapToCapabilities: (cfg) => ({
+          recolorables: [
+            {
+              get: () => cfg.primary_color || defaultConfig.primary_color,
+              set: (value) => window.elementSdk.setConfig({ primary_color: value })
+            },
+            {
+              get: () => cfg.surface_color || defaultConfig.surface_color,
+              set: (value) => window.elementSdk.setConfig({ surface_color: value })
+            },
+            {
+              get: () => cfg.text_color || defaultConfig.text_color,
+              set: (value) => window.elementSdk.setConfig({ text_color: value })
+            },
+            {
+              get: () => cfg.accent_color || defaultConfig.accent_color,
+              set: (value) => window.elementSdk.setConfig({ accent_color: value })
+            },
+            {
+              get: () => cfg.secondary_accent || defaultConfig.secondary_accent,
+              set: (value) => window.elementSdk.setConfig({ secondary_accent: value })
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => cfg.font_family || defaultConfig.font_family,
+            set: (value) => window.elementSdk.setConfig({ font_family: value })
+          },
+          fontSizeable: {
+            get: () => cfg.font_size || defaultConfig.font_size,
+            set: (value) => window.elementSdk.setConfig({ font_size: value })
+          }
+        }),
+        mapToEditPanelValues: (cfg) => new Map([
+          ["platform_title", cfg.platform_title || defaultConfig.platform_title],
+          ["team_name", cfg.team_name || defaultConfig.team_name],
+          ["tagline", cfg.tagline || defaultConfig.tagline]
+        ])
+      });
+    }
+
+    // Initial render
+    renderApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c9be61a7170d97b',t:'MTc3MDM5NDAyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
